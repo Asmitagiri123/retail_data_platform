@@ -1,0 +1,150 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw data loaded as-is from the daily CSV files. No cleaning is done in this layer.
+    database: RETAIL_DB
+    schema: BRONZE
+
+    tables:
+      - name: raw_sales
+        description: One row per invoice line (one item on one bill). Append only. Can contain duplicates, zero or negative quantities and missing store ids.
+        loaded_at_field: _ingest_ts
+        freshness:
+          warn_after: {count: 36, period: hour}
+          error_after: {count: 72, period: hour}
+        columns:
+          - name: txn_id
+            description: Invoice (bill) number, for example S01-20261101-00001. One bill has many lines.
+          - name: line_no
+            description: Line number inside the invoice. txn_id and line_no together identify one line.
+          - name: store_id
+            description: Store where the sale happened. Can be empty in bad records.
+          - name: product_id
+            description: Product that was sold.
+          - name: customer_id
+            description: Loyalty customer. Empty when the customer is anonymous.
+          - name: quantity
+            description: Number of items sold. Can be zero or negative in bad records.
+          - name: unit_price
+            description: Price of one item on the day of sale (NPR).
+          - name: discount
+            description: Discount amount on the line (NPR).
+          - name: payment_method
+            description: How the customer paid (CASH, CARD, ESEWA, KHALTI, FONEPAY).
+          - name: channel
+            description: Sales channel (IN_STORE or APP).
+          - name: event_ts
+            description: Date and time of the sale.
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.
+
+      - name: raw_returns
+        description: One row per returned invoice line. Some returns point to an invoice that does not exist.
+        columns:
+          - name: return_id
+            description: Unique return number.
+          - name: txn_id
+            description: Invoice the item was bought on.
+          - name: line_no
+            description: Invoice line that was returned.
+          - name: quantity
+            description: Number of items returned.
+          - name: refund_amount
+            description: Money given back to the customer (NPR).
+          - name: reason_code
+            description: Reason for the return (CHANGED_MIND, DAMAGED, EXPIRED, WRONG_ITEM, QUALITY).
+          - name: return_ts
+            description: Date and time of the return.
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.
+
+      - name: raw_products
+        description: Latest state of the product master. Replaced on every load, so history is built later by a dbt snapshot.
+        columns:
+          - name: product_id
+            description: Unique product code.
+          - name: product_name
+            description: Product name (brand and sub category).
+          - name: brand
+            description: Brand of the product.
+          - name: category
+            description: Main product category, for example Grocery or Dairy.
+          - name: sub_category
+            description: Product group inside the category.
+          - name: supplier_id
+            description: Supplier of the product.
+          - name: list_price
+            description: Current selling price of one item (NPR).
+          - name: cost
+            description: Purchase cost of one item (NPR), used for margin.
+          - name: status
+            description: Product status, for example ACTIVE.
+          - name: updated_at
+            description: Date when the product record last changed (price change date).
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.
+
+      - name: raw_customers
+        description: Latest state of the loyalty customer master. Replaced on every load, history is built later by a dbt snapshot.
+        columns:
+          - name: customer_id
+            description: Unique customer code.
+          - name: customer_name
+            description: Customer name (synthetic).
+          - name: email
+            description: Customer email. Can be in mixed case.
+          - name: phone
+            description: Customer phone number. Some values have the +977- prefix.
+          - name: city
+            description: City of the customer.
+          - name: loyalty_tier
+            description: Loyalty level (BRONZE, SILVER, GOLD, PLATINUM).
+          - name: signup_date
+            description: Date the customer joined the loyalty program.
+          - name: updated_at
+            description: Date when the customer record last changed (tier change date).
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.
+
+      - name: raw_stores
+        description: Store master data. One row per store. Loaded once.
+        columns:
+          - name: store_id
+            description: Unique store code.
+          - name: store_name
+            description: Store name (fictional).
+          - name: city
+            description: City where the store is located.
+          - name: region
+            description: Province of the store.
+          - name: format
+            description: Store type (HYPERMARKET or SUPERMARKET).
+          - name: open_date
+            description: Date the store opened.
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.
+
+      - name: raw_suppliers
+        description: Supplier master data. One row per supplier. Loaded once.
+        columns:
+          - name: supplier_id
+            description: Unique supplier code.
+          - name: supplier_name
+            description: Supplier company name (synthetic).
+          - name: city
+            description: City of the supplier.
+          - name: _source_file
+            description: Name of the file this row was loaded from.
+          - name: _ingest_ts
+            description: Time when the row was loaded into Snowflake.

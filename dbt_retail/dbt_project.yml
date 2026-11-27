@@ -13,7 +13,14 @@ models:
      staging:
        +materialized: view
        +schema: silver
-       
+
      marts: 
        +materialized: table
-       +schema: gold
+       +schema: gold 
+
+seeds:
+  retail:
+    +schema: silver
+    festival_calendar:
+      +column_types:
+        calendar_date: date

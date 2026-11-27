@@ -1,0 +1,68 @@
+version: 2
+
+models:
+  - name: stg_sales
+    columns:
+      - name: sales_line_key
+        tests: [unique, not_null]
+      - name: store_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_stores')
+              field: store_id
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
+      - name: payment_method
+        tests:
+          - accepted_values:
+              values: ['CASH', 'CARD', 'ESEWA', 'KHALTI', 'FONEPAY']
+      - name: channel
+        tests:
+          - accepted_values:
+              values: ['IN_STORE', 'APP']
+
+  - name: stg_returns
+    columns:
+      - name: return_id
+        tests: [unique, not_null]
+      - name: txn_id
+        tests:
+          - relationships:
+              to: ref('stg_sales')
+              field: txn_id
+              config:
+                severity: warn
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        tests: [unique, not_null]
+
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: loyalty_tier
+        tests:
+          - accepted_values:
+              values: ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM']
+
+  - name: stg_stores
+    columns:
+      - name: store_id
+        tests: [unique, not_null]
+
+  - name: stg_suppliers
+    columns:
+      - name: supplier_id
+        tests: [unique, not_null]
