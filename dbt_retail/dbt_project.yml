@@ -1,0 +1,19 @@
+name: retail
+version: '1.0.0'
+profile: retail
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+models:
+  retail:
+     staging:
+       +materialized: view
+       +schema: silver
+       
+     marts: 
+       +materialized: table
+       +schema: gold
